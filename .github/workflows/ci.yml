@@ -16,6 +16,7 @@ jobs:
       - run: uv sync --frozen --extra dev
       - run: uv run --frozen ruff check src tests scripts
       - run: uv run --frozen ruff format --check src tests scripts
+      - run: mkdir -p runs/ci-tests
       - run: uv run --frozen pytest -q --basetemp=runs/ci-tests
       - uses: actions/upload-artifact@v4
         if: always()
