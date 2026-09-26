@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "kinematiccad-bench"
+version = "0.1.0"
+description = "Executable B-Rep and contact-dynamics contracts for AI mechanical design"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = "MIT"
+dependencies = [
+  "cadquery==2.6.1", "mujoco==3.3.6", "numpy==2.2.6", "scipy==1.15.3",
+  "pillow==11.3.0", "pydantic==2.11.9", "httpx==0.28.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.2", "ruff==0.13.1"]
+
+[project.scripts]
+kcb = "kinematiccad.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kinematiccad"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = ["integration: real OpenCascade and MuJoCo execution", "docker: requires Docker Engine"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+

@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, cite this repository and the exact protocol/image revision."
+title: "KinematicCAD-Bench: Executable Mechanical Design Contracts for AI-generated CAD"
+type: software
+version: 0.1.0
+date-released: 2026-09-22
+authors:
+  - name: "KinematicCAD-Bench contributors"
+license: MIT
+abstract: >-
+  A deterministic evaluation pipeline combining boundary-representation validity,
+  boolean assembly checks, contact-driven rigid-body dynamics, analytical motion
+  contracts, and autonomous visual evidence for AI-generated parametric CAD.
+keywords:
+  - mechanical design
+  - CAD
+  - artificial intelligence
+  - benchmark
+  - rigid-body dynamics
+

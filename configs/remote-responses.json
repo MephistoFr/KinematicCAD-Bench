@@ -1,0 +1,9 @@
+{
+  "kind": "http",
+  "protocol": "responses",
+  "url": "https://api.openai.com/v1/responses",
+  "api_key_env": "OPENAI_API_KEY",
+  "model": "replace-with-an-exact-model-id",
+  "parameters": {"max_output_tokens": 12000},
+  "timeout": 300
+}

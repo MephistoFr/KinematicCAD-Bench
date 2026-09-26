@@ -1,0 +1,9 @@
+{
+  "kind": "http",
+  "protocol": "chat",
+  "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+  "api_key_env": "GEMINI_API_KEY",
+  "model": "gemini-3.8-flash",
+  "parameters": {"max_tokens": 12000, "temperature": 0},
+  "timeout": 300
+}

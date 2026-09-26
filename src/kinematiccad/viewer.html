@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'">
+<title>KinematicCAD-Bench · Physical evidence</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101827;color:#e3e9f4;font:15px system-ui,sans-serif}
+main{max-width:1250px;margin:auto;padding:32px}header{display:flex;align-items:center;justify-content:space-between;gap:20px}
+h1{font-size:25px;letter-spacing:-.6px;margin:10px 0}small{color:#99abc6;letter-spacing:2px}p{line-height:1.6;color:#aebdd3}
+.badge{border:1px solid #536077;padding:10px 16px;border-radius:30px;color:#ffd28a}canvas{display:block;width:100%;background:#111c2e;border:1px solid #2c3b51;border-radius:10px;touch-action:none}
+.controls{display:flex;gap:15px;align-items:center;padding:18px 0}button,select{background:#20314d;border:1px solid #455774;border-radius:6px;color:#e3e9f4;padding:10px;cursor:pointer}input{flex:1;accent-color:#efa84a}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px ui-monospace,monospace;background:#152238;padding:20px;border-radius:8px}details{margin-top:20px}.legend{display:flex;gap:20px;flex-wrap:wrap}.swatch{display:inline-block;width:10px;height:10px;margin-right:7px;border-radius:2px}footer{margin-top:24px;color:#8497b2;font-size:12px}
+</style>
+<main><header><div><small>EXECUTABLE MECHANICAL CONTRACTS</small><h1>KinematicCAD-Bench</h1></div><span class="badge" id="status"></span></header>
+<p id="task"></p><canvas id="scene" width="1160" height="580" aria-label="Measured mechanism replay"></canvas>
+<div class="controls"><button id="play">Pause</button><select id="trial" aria-label="Trial"></select><input id="frame" aria-label="Simulation frame" type="range" min="0" value="0"><span id="time"></span></div>
+<div id="legend" class="legend"></div><p>Drag to rotate the view. The replay contains measured body poses. All geometry and evidence are embedded; no network connection is used.</p>
+<details open><summary>Mechanical verdict and diagnostics</summary><pre id="report"></pre></details>
+<details><summary>Mathematical task contract</summary><pre id="contract"></pre></details>
+<footer>Numerical rigid-body evidence, within the declared tolerances and simulated horizon. Ideal supplied bearings do not certify material strength, fatigue or manufacturability.</footer></main>
+<script>
+"use strict";
+const D=__DATA__;
+const $=id=>document.getElementById(id), cv=$('scene'),ctx=cv.getContext('2d');
+const colors=[[244,173,66],[82,181,224],[176,134,223],[110,198,155],[240,122,117]];
+let run=0,frame=0,playing=true,yaw=-.2,pitch=.60,drag=null;
+$('status').textContent=D.report.status.toUpperCase();$('task').textContent=D.task.id+' — '+D.task.description;
+$('report').textContent=JSON.stringify(D.report,null,2);$('contract').textContent=JSON.stringify(D.task,null,2);
+D.runs.forEach((r,i)=>{const o=document.createElement('option');o.value=i;o.textContent=r.name;$('trial').append(o)});
+Object.keys(D.meshes).forEach((name,i)=>{const e=document.createElement('span'),s=document.createElement('i');s.className='swatch';s.style.background=`rgb(${colors[i%colors.length]})`;e.append(s,document.createTextNode(name));$('legend').append(e)});
+function transform(v,p){let r=p.rot;return [r[0]*v[0]+r[1]*v[1]+r[2]*v[2]+p.pos[0],r[3]*v[0]+r[4]*v[1]+r[5]*v[2]+p.pos[1],r[6]*v[0]+r[7]*v[1]+r[8]*v[2]+p.pos[2]]}
+function project(v){const c=Math.cos(yaw),s=Math.sin(yaw),x=c*v[0]-s*v[1],y=s*v[0]+c*v[1];return [x,Math.cos(pitch)*y-Math.sin(pitch)*v[2],Math.sin(pitch)*y+Math.cos(pitch)*v[2]]}
+// Fixed scale from all recorded world positions, not a per-frame recentering that hides motion.
+let lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
+for(const r of D.runs)for(const f of r.frames)for(const [name,m] of Object.entries(D.meshes)){const p=f.poses[name];if(!p)continue;for(const v of m.vertices){const q=transform(v,p);for(let k=0;k<3;k++){lo[k]=Math.min(lo[k],q[k]);hi[k]=Math.max(hi[k],q[k])}}}
+let centre=lo.map((v,k)=>Number.isFinite(v)?(v+hi[k])/2:0),extent=Math.max(20,...hi.map((v,k)=>Number.isFinite(v)?v-lo[k]:20));
+function draw(){const frames=D.runs[run].frames;frame=Math.min(frame,frames.length-1);const f=frames[frame],tris=[],scale=860/extent,cen=project(centre);
+ctx.fillStyle='#111c2e';ctx.fillRect(0,0,cv.width,cv.height);let index=0;
+for(const [name,m] of Object.entries(D.meshes)){const p=f.poses[name];if(!p)continue;const vs=m.vertices.map(v=>project(transform(v,p))),color=colors[index++%colors.length];
+for(const face of m.triangles){const t=face.map(i=>vs[i]);const a=t[1].map((x,k)=>x-t[0][k]),b=t[2].map((x,k)=>x-t[0][k]),n=[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],len=Math.hypot(...n)||1,shade=.62+.38*Math.abs((n[0]*.25-n[1]*.4+n[2]*.88)/len);tris.push({t,z:(t[0][2]+t[1][2]+t[2][2])/3,c:color.map(x=>Math.min(255,Math.round(x*shade)))})}}
+tris.sort((a,b)=>a.z-b.z);for(const {t,c} of tris){ctx.beginPath();t.forEach((p,i)=>ctx[i?'lineTo':'moveTo'](580+(p[0]-cen[0])*scale,290-(p[1]-cen[1])*scale));ctx.closePath();ctx.fillStyle=`rgb(${c})`;ctx.fill()}
+ctx.fillStyle='#aebdd3';ctx.font='15px system-ui';ctx.fillText(D.task.id,24,32);if(!tris.length)ctx.fillText('No usable geometry: consult the diagnostic report.',24,270);
+$('frame').max=frames.length-1;$('frame').value=frame;$('time').textContent=f.time.toFixed(3)+' s';}
+$('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'Pause':'Play'};
+$('trial').onchange=e=>{run=+e.target.value;frame=0;draw()};$('frame').oninput=e=>{frame=+e.target.value;playing=false;$('play').textContent='Play';draw()};
+cv.onpointerdown=e=>{drag=[e.clientX,e.clientY];cv.setPointerCapture(e.pointerId)};cv.onpointerup=()=>drag=null;cv.onpointermove=e=>{if(drag){yaw+=(e.clientX-drag[0])*.008;pitch+=(e.clientY-drag[1])*.008;drag=[e.clientX,e.clientY];draw()}};
+setInterval(()=>{if(playing){frame=(frame+1)%D.runs[run].frames.length;draw()}},40);draw();
+</script></html>
+

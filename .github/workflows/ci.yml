@@ -1,0 +1,44 @@
+name: mechanical-contracts
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: sudo apt-get update && sudo apt-get install -y libgl1 libglu1-mesa libglib2.0-0
+      - run: python -m pip install uv==0.12.5
+      - run: uv sync --frozen --extra dev
+      - run: uv run --frozen ruff check src tests scripts
+      - run: uv run --frozen ruff format --check src tests scripts
+      - run: uv run --frozen pytest -q --basetemp=runs/ci-tests
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: physical-evidence
+          path: |
+            runs/ci-tests/**/result.json
+            runs/ci-tests/**/evidence.html
+            runs/ci-tests/**/*.gif
+  containers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: sudo apt-get update && sudo apt-get install -y libgl1 libglu1-mesa libglib2.0-0
+      - run: python -m pip install uv==0.12.5
+      - run: uv sync --frozen --extra dev
+      - run: docker build --target candidate -t kinematiccad-bench:0.1.0-candidate .
+      - run: docker build --target judge -t kinematiccad-bench:0.1.0 .
+      - run: uv run --frozen pytest -q tests/test_pipeline.py -m docker
+        env:
+          KCB_TEST_DOCKER: '1'
+
